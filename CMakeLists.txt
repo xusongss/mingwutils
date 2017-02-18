@@ -18,8 +18,7 @@ set(SOURCE_FILES
         libutils/RWLock.cpp
         libutils/VectorImpl.cpp
         libutils/SharedBuffer.cpp
-
-
+        libutils/Queue.cpp
         libutils/AAtomizer.cpp
         libutils/AString.cpp
         libutils/ABitReader.cpp
@@ -32,6 +31,16 @@ set(SOURCE_FILES
         libutils/AMessage.cpp
         libutils/base64.cpp
         libutils/hexdump.cpp
-        main.cpp)
-add_library(utils  ${SOURCE_FILES})
-add_executable(Athena ${SOURCE_FILES})
+
+
+        libavutils/PixDesc.c
+        libavutils/Raw.c
+        libavutils/Utils.c
+
+        libdecoder/Decoder.cpp
+        )
+add_library(utils  SHARED ${SOURCE_FILES})
+#add_executable(Athena ${SOURCE_FILES})
+
+add_executable(queue_test test/queue_test.cpp)
+target_link_libraries(queue_test utils)
