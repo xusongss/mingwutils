@@ -7,15 +7,21 @@
 #include <map>
 namespace Athena{
     class Decoder;
+    /**
+     *  class DecoderThread
+     */
     class DecoderThread :public Thread{
     public:
         DecoderThread(Decoder* decoder);
-        virtual bool        threadLoop();
+        virtual bool  threadLoop();
 
     private:
         Decoder * mDecoder;
         sp<Queue> mQue;
     };
+    /**
+     *  class Decoder
+     */
     class Decoder :public IDecoder{
     public:
         Decoder(Type_e type = ASYNC, int threadNb = 3);
@@ -40,7 +46,16 @@ namespace Athena{
 
     private:
         friend  class DecoderThread;
+        /**
+         *
+         * @param msg
+         * used by DecoderThread
+         * the real decoder function
+         */
         void decoderFrame(msg_t * msg);
+        /**
+         * DecoderThread wile be pull Frame from ths Queue
+         */
         sp<Queue> getMsgQue(){
             return mMsgQue;
         }
@@ -51,14 +66,31 @@ namespace Athena{
         bool mIsStarted;
 
         int mThreadNb;
-        int mMemPoolLen;/*mMemPoolLen = mThreadNb*/
+        /**
+         * mMemPoolLen = mThreadNb x 2
+         * */
+        int mMemPoolLen;
         std::list< char* > mMemPool;
         std::map<int, sp<DecoderThread>>mThs;
+
         Mutex mMutex;
         Type_e mType;
         Lisener * mLisener;
+        /**
+         *Calculation Lost frame rate
+         **/
         long long  mFrameRcvCount;
         long long  mFrameSendCount;
+
+        /**
+         * mPixFmt
+         * mWidth
+         * mHight
+         *  the values is fixed until the time of first frame coming
+         **/
+        int mPixFmt;
+        int mWidth;
+        int mHight;
     };
     DecoderThread::DecoderThread(Decoder* decoder):
         mDecoder(decoder),mQue(decoder->getMsgQue()){
