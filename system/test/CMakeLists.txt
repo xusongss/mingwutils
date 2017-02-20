@@ -11,7 +11,7 @@ target_link_libraries(decoder_test utils)
 add_executable(thread_test thread_test.cpp)
 target_link_libraries(thread_test utils)
 
-add_executable(option_test Car.cpp)
-target_link_libraries(option_test utils)
+add_executable(config_test Car.cpp)
+target_link_libraries(config_test utils)
 
 

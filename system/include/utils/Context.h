@@ -11,8 +11,8 @@ namespace Athena{
         Context();
         virtual ~Context();
     protected:
-        status_t configDefault();
-        status_t config(const char * key, const char * val, int search_flags =0);
+        status_t setDefault();
+        status_t set(const char * key, const char * val, int search_flags =0);
     protected:
         virtual config_ctx_t* getCtx() {return NULL;};
     };

@@ -1,13 +1,13 @@
 #define LOG_TAG "car"
 #include <stddef.h>
-#include <utils/Context.h>
+
 #include<utils/Log.h>
 #include <stdio.h>
+#include "Car.h"
 using namespace Athena;
 static void Notify(config_ctx_t *ctx, const char * key, const char * val);
-class Car;
 struct Ctx{
-	config_ctx_t ctx;
+	config_ctx_t ctx;//must the first
 	int mWidth;
 	int mHight;
 	int mKg;
@@ -22,47 +22,32 @@ static Option_t ops[] = {
 		{ "kg", 	"set car hight", offsetof(Ctx, mKg), 		OPT_TYPE_INT , {.i64=300}, 0, 3000, 0, 0,	.notify=(notify_f)Notify},
 		{NULL}
 };
-class Car :public Context{
-public:
-	Car(const char * name);
-	virtual ~Car();
-
-public:
-	const char * getName(){
-		return mName;
-	}
-	int setParameter(const char * key, const char * val);
-	void display();
-
-protected:
-	config_ctx_t* getCtx();
-
-private:
-	Ctx mCtx;
-	char mName[128];
-};
 static void Notify(config_ctx_t *ctx, const char * key, const char * val){
 	ALOGV("Notify %s set key %s val %s", ((Ctx*)ctx)->mParent->getName(),key, val);
 }
 
 Car::Car(const char * name) {
-	mCtx.mParent = this;
-	mCtx.ctx.ops = ops;
+    Ctx *ctx = new Ctx;
+    ctx->mParent = this;
+    ctx->ctx.ops = ops;
+    mCtx = (void*)ctx;
 	sprintf(this->mName, name);
-	this->configDefault();
+	this->setDefault();
 }
 Car::~Car() {
 }
 config_ctx_t *Car::getCtx(){
-	return &mCtx.ctx;
+    Ctx *ctx = ( Ctx *)mCtx;
+	return &ctx->ctx;
 }
 int Car::setParameter(const char * key, const char * val){
-	this->config(key, val);
+	this->set(key, val);
 }
 void Car::display(){
-	ALOGV("  width %d", this->mCtx.mWidth);
-	ALOGV("  hight %d", this->mCtx.mHight);
-	ALOGV("  kg %d", this->mCtx.mKg);
+    Ctx *ctx = ( Ctx *)mCtx;
+	ALOGV("  width %d", ctx->mWidth);
+	ALOGV("  hight %d", ctx->mHight);
+	ALOGV("  kg %d", ctx->mKg);
 
 }
 int main() {

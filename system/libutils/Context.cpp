@@ -99,10 +99,10 @@ static status_t config_set(config_ctx_t *ctx,const char * key, const char * val,
     }
     Context::~Context(){
     }
-    status_t Context::configDefault(){
+    status_t Context::setDefault(){
         config_default(this->getCtx());
     }
-    status_t Context::config(const char * key, const char * val, int search_flags){
+    status_t Context::set(const char * key, const char * val, int search_flags){
         config_ctx_t *ctx = this->getCtx();
         if(ctx != NULL){
             return config_set(ctx, key, val, search_flags);
