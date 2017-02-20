@@ -12,5 +12,4 @@ namespace Athena {
         virtual status_t stop() = 0;
     };
 }
-
 #endif

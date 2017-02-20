@@ -45,7 +45,7 @@ namespace Athena {
          * used by DecoderThread
          * the real decoder function
          */
-        void decoderFrame(msg_t * msg);
+        int  decoderFrame(Frame_t * frame,  unsigned char  * out_buf = NULL, int * out_len = NULL);
         /**
          * DecoderThread wile be pull Frame from ths Queue
          */

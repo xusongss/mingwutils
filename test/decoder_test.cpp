@@ -13,7 +13,7 @@ int main(){
         frame.pBuff = pbuf;
         frame.size = 128;
         ALOGV("frame %d", i);
-        decoder->decoder(&frame, NULL, NULL);
+        decoder->decoder(&frame);
        // usleep(1000);
     }
     IDecoder::destroyDecoder(decoder);

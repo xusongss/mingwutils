@@ -40,8 +40,6 @@ set(SOURCE_FILES
         libdecoder/Decoder.cpp
         )
 add_library(utils  SHARED ${SOURCE_FILES})
-#add_executable(Athena ${SOURCE_FILES})
-
 add_executable(queue_test test/queue_test.cpp)
 target_link_libraries(queue_test utils)
 

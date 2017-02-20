@@ -36,7 +36,9 @@ namespace Athena{
     bool DecoderThread::threadLoop(){
         msg_t *msg= mQue->dequeue();
         if(msg != NULL){
-            mDecoder->decoderFrame(msg);
+            Frame_t * frame = (Frame_t*)msg->data;
+            mDecoder->decoderFrame(frame);
+            mDecoder->freeMem((char*)msg);
         }else{
             return false;
         }
@@ -161,6 +163,9 @@ namespace Athena{
     }
     int Decoder::decoder(Frame_t * frame, unsigned char  * out_buf, int * out_len){
         mFrameRcvCount++;
+        if(this->mType == SYNC){
+            return this->decoderFrame(frame, out_buf, out_len);
+        }
         if (mFirstFrame){
             int i = 0;
             char * pBuf = NULL;
@@ -199,12 +204,12 @@ namespace Athena{
         memcpy(pMsg->data, frame->pBuff, frame->size);
         this->mMsgQue->enqueue(pMsg);
         mFrameSendCount++;
-        return 0;
+        return NO_ERROR;
     }
-    void Decoder::decoderFrame(msg_t * msg){
+    int Decoder::decoderFrame(Frame_t *frame,  unsigned char  * pout_buf, int * pout_len){
 
         ALOGE("Decoder::decoderFrame %d ", this->mFrameSendCount);
-        Frame_t * pframe = (Frame_t * )msg->data;
+        Frame_t * pframe =frame;
         unsigned  char * pReslut = NULL;
         int len = 0;
         int ret = 0;
@@ -239,11 +244,18 @@ namespace Athena{
                 }
             }
         }while(0);
+
+        if(ret && (pout_buf != NULL) && (pout_len != NULL)){
+            if(*pout_len > len){
+                memcpy(pout_buf, pReslut, len);
+                *pout_len = len;
+            }
+        }
         if(ret && (mLisener != NULL)){
             mLisener->onDecode(pReslut, len);
         }
-        this->freeMem((char*)msg);
-
+        // free pResult;
+        return NO_ERROR;
 
     }
     IMPLEMENT_DECODER_FUNCTION(Decoder, QRdecode);

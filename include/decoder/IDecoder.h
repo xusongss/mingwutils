@@ -17,7 +17,7 @@ namespace Athena {
         public:
             virtual void onDecode(unsigned char * out_buf, int out_len) = 0;
         };
-        virtual int decoder(Frame_t * frame, unsigned char  * out_buf, int * out_len) = 0;
+        virtual int decoder(Frame_t * frame, unsigned char  * out_buf = 0, int * out_len = 0) = 0;
 
         virtual int setLisener(Lisener * l) = 0;
         virtual int setThreadNb(int threadNb) = 0;
