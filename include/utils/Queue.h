@@ -28,6 +28,7 @@ namespace Athena{
         ~Queue();
         int  enqueue(msg_t* pMsg,int timeout = -1);
         msg_t * dequeue(int timeout = -1);
+        void notifyAll();
     private:
        Mutex mMutex;
         Condition mCond;

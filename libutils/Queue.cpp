@@ -70,4 +70,7 @@ namespace Athena{
         }
         return p_msg;
     }
+    void Queue::notifyAll(){
+        this->mCond.broadcast();
+    }
 }

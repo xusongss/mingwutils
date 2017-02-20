@@ -8,6 +8,8 @@ typedef struct{
     int fmt;/*AVPixelFormat*/
     int size;
     unsigned char * pBuff;
+    int width;
+    int height;
 }Frame_t;
 #ifdef __cplusplus
 } // extern "C"

@@ -1,118 +1,62 @@
-#include<decoder/IDecoder.h>
-#include <utils/Thread.h>
-#include <utils/Queue.h>
-#include <utils/Mutex.h>
-#include <stdio.h>
-#include <list>
-#include <map>
+#define LOG_TAG "Decoder"
+//#define NDEBUG 0
+#include <decoder/ImageDecoderFunc.h>
+#include "Decoder_internal.h"
+#include <utils/Log.h>
+#include <capture/Frame.h>
+
+
 namespace Athena{
-    class Decoder;
     /**
-     *  class DecoderThread
-     */
+ *  class DecoderThread
+ */
     class DecoderThread :public Thread{
     public:
         DecoderThread(Decoder* decoder);
+        ~DecoderThread();
+        virtual status_t readyToRun();
         virtual bool  threadLoop();
 
     private:
         Decoder * mDecoder;
         sp<Queue> mQue;
     };
-    /**
-     *  class Decoder
-     */
-    class Decoder :public IDecoder{
-    public:
-        Decoder(Type_e type = ASYNC, int threadNb = 3);
-        virtual int decoder(Frame_t * frame, unsigned char  * buf, int * len);
-        virtual int setLisener(Lisener * l);
-    public:
-        status_t start();
-        status_t stop();
 
-        int getThreadNb();
-        int getRecv();
-        int getDecodered();
-        double getLossRate();
-        status_t setThreadNb(int threadNb);
-    public:
-        char *getMem();
-        void freeMem(char * pbuf);
-    private:
-        status_t init();
-        status_t unInit();
-
-
-    private:
-        friend  class DecoderThread;
-        /**
-         *
-         * @param msg
-         * used by DecoderThread
-         * the real decoder function
-         */
-        void decoderFrame(msg_t * msg);
-        /**
-         * DecoderThread wile be pull Frame from ths Queue
-         */
-        sp<Queue> getMsgQue(){
-            return mMsgQue;
-        }
-    private:
-        sp<Queue>mMsgQue;
-
-        bool mFirstFrame;
-        bool mIsStarted;
-
-        int mThreadNb;
-        /**
-         * mMemPoolLen = mThreadNb x 2
-         * */
-        int mMemPoolLen;
-        std::list< char* > mMemPool;
-        std::map<int, sp<DecoderThread>>mThs;
-
-        Mutex mMutex;
-        Type_e mType;
-        Lisener * mLisener;
-        /**
-         *Calculation Lost frame rate
-         **/
-        long long  mFrameRcvCount;
-        long long  mFrameSendCount;
-
-        /**
-         * mPixFmt
-         * mWidth
-         * mHight
-         *  the values is fixed until the time of first frame coming
-         **/
-        int mPixFmt;
-        int mWidth;
-        int mHight;
-    };
     DecoderThread::DecoderThread(Decoder* decoder):
-        mDecoder(decoder),mQue(decoder->getMsgQue()){
+        mDecoder(decoder){
+        mQue = mDecoder->getMsgQue();
+    }
+    DecoderThread::~DecoderThread(){
+        ALOGV("~DecoderThread is clall.");
+    }
+    status_t DecoderThread::readyToRun(){
+        ALOGV("DecoderThread::readyToRun.");
+        return NO_ERROR;
     }
     bool DecoderThread::threadLoop(){
-        //sp<Queue> que = mDecoder->getMsgQue();
-        msg_t *msg= mQue->dequeue(1000000000);
+        msg_t *msg= mQue->dequeue();
         if(msg != NULL){
             mDecoder->decoderFrame(msg);
+        }else{
+            return false;
         }
         return true;
     }
 
-    Decoder::Decoder(Type_e type, int threadNb) :
+    Decoder::Decoder(Type_e type, unsigned char flags,int threadNb) :
+            mFlags(flags),
             mType(type),
+            mBasebuf(NULL),
             mIsStarted(false),
-            mFirstFrame(false),
+            mFirstFrame(true),
             mThreadNb(threadNb),
             mFrameRcvCount(0),
             mFrameSendCount(0)
     {
         mMsgQue = new Queue;
+    }
+   Decoder:: ~ Decoder(){
+        stop();
     }
     int Decoder::setLisener(Lisener * Lis){
         AutoMutex l(mMutex);
@@ -173,9 +117,9 @@ namespace Athena{
             if (pbuf == NULL)
             {
                 //LOGE(LOG_TAG, "%s buf null");
+                ALOGE("free mem pbuf is null");
                 break;
             }
-            //memset(pbuf, 0, sizeof(pBuf));
             mMemPool.push_back(pbuf);
 
         } while (0);
@@ -193,21 +137,22 @@ namespace Athena{
             sp<DecoderThread> pth = new DecoderThread(this);
             mThs[thNb] = pth;
         }
-        mMemPoolLen = mThreadNb *2;
+        mMemPoolLen = mThreadNb * 2;
         return NO_ERROR;
     }
     status_t Decoder::unInit(){
         std::map<int, sp<DecoderThread>>::iterator it = mThs.begin();
         for (; it != mThs.end(); ++it){
             sp<DecoderThread> pth = it->second;
-            pth->requestExitAndWait();
+            pth->requestExit();
         }
+        mMsgQue->notifyAll();
         mThs.clear();
 
         std::list<char*>::iterator lit = mMemPool.begin();
 
-        for (; lit != mMemPool.end(); ++lit){
-            free(*lit);
+        if(mBasebuf){
+            free(mBasebuf);
         }
         mMemPool.clear();
         mFirstFrame = true;
@@ -216,36 +161,37 @@ namespace Athena{
     }
     int Decoder::decoder(Frame_t * frame, unsigned char  * out_buf, int * out_len){
         mFrameRcvCount++;
-        if (!mIsStarted){
-            return 0;
-        }
         if (mFirstFrame){
             int i = 0;
+            char * pBuf = NULL;
+            int nodeLenth = sizeof(msg_t)+ frame->size + 32;
+
+            this->start();
+
             AutoMutex l(mMutex);
+            if(mMemPoolLen){
+                mBasebuf = (char*)malloc(nodeLenth * mMemPoolLen);
+            }
+            pBuf = mBasebuf;
             for (; i < mMemPoolLen; i++){
-                char * pBuf = (char*)malloc(sizeof(msg_t)+frame->size + 32);
                 if (pBuf == NULL){
-                   // LOGE(LOG_TAG, "malloc null ");
+                    ALOGE(LOG_TAG, "init mem Pool pBuf null ");
                     return 0;
                 }
                 mMemPool.push_back(pBuf);
+                pBuf += nodeLenth;
             }
-            /*
-            map<int, CDecodeThread*>::iterator it = mThs.begin();
-            for (; it != mThs.end(); ++it){
-                CDecodeThread* pth = it->second;
-                pth->SetSubType(frame->GuidSubType);
-                pth->SetWidth(frame->w);
-                pth->SetHeight(frame->h);
-            }
-            */
             mFirstFrame = false;
         }
+        if (!mIsStarted){
+            return 0;
+        }
+
         char * pbuf = NULL;
         pbuf = this->getMem();
         if (pbuf == NULL)
         {
-            //LOGE(LOG_TAG, "CBaseThread::GetMem() ");
+            ALOGV("GetMem() is null ");
             return 0;
         }
         msg_t* pMsg = (msg_t*)pbuf;
@@ -256,11 +202,57 @@ namespace Athena{
         return 0;
     }
     void Decoder::decoderFrame(msg_t * msg){
+
+        ALOGE("Decoder::decoderFrame %d ", this->mFrameSendCount);
+        Frame_t * pframe = (Frame_t * )msg->data;
+        unsigned  char * pReslut = NULL;
+        int len = 0;
+        int ret = 0;
+        unsigned char code_flag;
+        do{
+            if(mFlags & CODE_FLAGS_QR){
+                ret = this->QRdecode(pframe->pBuff, pframe->width,pframe->height, &pReslut, &len);
+                if(ret != 0){
+                    code_flag = CODE_FLAGS_QR;
+                    break;
+                }
+            }
+            if(mFlags & CODE_FLAGS_BAR){
+                ret = this->BARdecode(pframe->pBuff, pframe->width,pframe->height, &pReslut, &len);
+                if(ret != 0){
+                    code_flag = CODE_FLAGS_BAR;
+                    break;
+                }
+            }
+            if(mFlags & CODE_FLAGS_DM){
+                ret = this->DMdecode(pframe->pBuff, pframe->width,pframe->height, &pReslut, &len);
+                if(ret != 0){
+                    code_flag = CODE_FLAGS_DM;
+                    break;
+                }
+            }
+            if(mFlags & CODE_FLAGS_HX){
+                ret = this->HXdecode(pframe->pBuff, pframe->width,pframe->height, &pReslut, &len);
+                if(ret != 0){
+                    code_flag = CODE_FLAGS_HX;
+                    break;
+                }
+            }
+        }while(0);
+        if(ret && (mLisener != NULL)){
+            mLisener->onDecode(pReslut, len);
+        }
         this->freeMem((char*)msg);
 
+
     }
-    IDecoder* IDecoder::createDecoder(Type_e type){
-        return new Decoder(type);
+    IMPLEMENT_DECODER_FUNCTION(Decoder, QRdecode);
+    IMPLEMENT_DECODER_FUNCTION(Decoder, HXdecode);
+    IMPLEMENT_DECODER_FUNCTION(Decoder, DMdecode);
+    IMPLEMENT_DECODER_FUNCTION(Decoder, BARdecode);
+
+    IDecoder* IDecoder::createDecoder(Type_e type, unsigned char flags){
+        return new Decoder(type, flags);
     }
     void IDecoder::destroyDecoder(IDecoder* decoder){
         Decoder * self = (Decoder*)decoder;

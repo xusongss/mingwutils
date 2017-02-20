@@ -1,21 +1,24 @@
+#define LOG_TAG "queue test"
 #include <utils/Queue.h>
 #include <utils/thread.h>
 #include <stdio.h>
+#include <utils/Log.h>
 using namespace Athena;
 class RevService :public Thread{
 public:
     RevService(sp<Queue> q):mQ(q) {}
     ~RevService(){
-        printf("~RevService is called \n");
+        ALOGV("~RevService is called ");
     }
     virtual bool        threadLoop(){
         msg_t *msg;
-        msg = mQ->dequeue(1000000000);
+        msg = mQ->dequeue();
         if(msg!= NULL){
-            printf("recv a msg %s\n", msg->data);
+            ALOGV("recv a msg %s\n", msg->data);
             free(msg);
         }else{
-            printf("time out\n");
+            ALOGV("time out\n");
+            return false;
         }
         return true;
     }
@@ -30,15 +33,16 @@ int main()
     th->run();
     do{
         int ret = 0;
+        printf("input int %d \n", i);
         ret = scanf("%d", &i);
         if(ret == 1){
             msg_t *msg;
             if(i == 10){
+                que->notifyAll();
                 th->requestExitAndWait();
                 break;
             }else{
                 msg = (msg_t *)malloc(sizeof(msg_t) + 128);
-                printf("input cmd %d \n", i);
                 sprintf((char*)msg->data, "%d", i);
                 que->enqueue(msg, 0);
             }

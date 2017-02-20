@@ -1,27 +1,25 @@
-#define LOG_TAG "cccc"
-#include <iostream>
+#define LOG_TAG "thead_test"
 #include<utils/Log.h>
 #include<utils/Thread.h>
+#include <unistd.h>
+
 using namespace Athena;
 class ThreadTest:public Thread{
     virtual ~ThreadTest(){
-        ALOGV("dest");
+        ALOGV("~ThreadTest is call ");
     }
-    virtual bool        threadLoop(){
+    virtual bool  threadLoop(){
         static int i = 10;
         ALOGV("threadLoop");
-        if(i--){
+        if(!(i--)){
             return false;
+        }{
+            sleep(1);
         }
         return true;
     }
 };
 int main() {
-    std::cout << "Hello, World!" << std::endl;
-    ALOGV("MAIN");
-    ALOGV("MAIN");
-    ALOGV("MAIN");
-    ALOGV("MAIN");
     sp<ThreadTest> th = new ThreadTest();
     th->run();
     th->join();
