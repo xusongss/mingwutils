@@ -42,7 +42,7 @@ typedef int         status_t;
 enum {
     OK                = 0,    // Everything's swell.
     NO_ERROR          = 0,    // No errors.
-    
+    NO_SUPPORTED      = 1,
     UNKNOWN_ERROR       = 0x80000000,
 
     NO_MEMORY           = -ENOMEM,

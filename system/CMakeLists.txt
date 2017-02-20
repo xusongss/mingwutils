@@ -31,6 +31,7 @@ set(SOURCE_FILES
         libutils/AMessage.cpp
         libutils/base64.cpp
         libutils/hexdump.cpp
+        libutils/Context.cpp
 
         libavutils/PixDesc.c
         libavutils/Raw.c
@@ -38,7 +39,8 @@ set(SOURCE_FILES
 
         libdecoder/Decoder.cpp
 
-        liboption/Option.cpp
+
+
         )
 
 add_library(utils  SHARED ${SOURCE_FILES})
