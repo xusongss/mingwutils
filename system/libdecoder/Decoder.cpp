@@ -87,7 +87,7 @@ namespace Athena{
         if (!mIsStarted){
             init();
         }
-        std::map<int, sp<DecoderThread>>::iterator it = mThs.begin();
+        std::map<int, sp<DecoderThread> >::iterator it = mThs.begin();
         for (; it != mThs.end(); ++it){
             sp<DecoderThread> pth = it->second;
             pth->run();
@@ -143,7 +143,7 @@ namespace Athena{
         return NO_ERROR;
     }
     status_t Decoder::unInit(){
-        std::map<int, sp<DecoderThread>>::iterator it = mThs.begin();
+        std::map<int, sp<DecoderThread> >::iterator it = mThs.begin();
         for (; it != mThs.end(); ++it){
             sp<DecoderThread> pth = it->second;
             pth->requestExit();

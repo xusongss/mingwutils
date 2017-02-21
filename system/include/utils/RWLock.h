@@ -22,6 +22,10 @@
 #include <utils/Errors.h>
 #include <utils/ThreadDefs.h>
 
+#if defined(HAVE_PTHREADS)
+# include <pthread.h>
+#endif
+
 // ---------------------------------------------------------------------------
 namespace Athena {
 // ---------------------------------------------------------------------------
@@ -72,7 +76,7 @@ private:
                 RWLock(const RWLock&);
    RWLock&      operator = (const RWLock&);
 
-   void* mRWLock;
+    pthread_rwlock_t mRWLock;
 };
 // ---------------------------------------------------------------------------
 }; // namespace android

@@ -1,6 +1,6 @@
 #define LOG_TAG "queue test"
 #include <utils/Queue.h>
-#include <utils/thread.h>
+#include <utils/Thread.h>
 #include <stdio.h>
 #include <utils/Log.h>
 using namespace Athena;

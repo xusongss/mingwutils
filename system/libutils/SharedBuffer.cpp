@@ -18,7 +18,7 @@
 #include <string.h>
 
 #include <utils/SharedBuffer.h>
-#include <utils/Atomic.h>
+#include <utils/atomic.h>
 
 // ---------------------------------------------------------------------------
 

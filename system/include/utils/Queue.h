@@ -35,7 +35,10 @@ namespace Athena{
         node_t head;
         int count;
 
-        DISALLOW_EVIL_CONSTRUCTORS(Queue);
+        //DISALLOW_EVIL_CONSTRUCTORS(Queue);
+	Queue(const Queue &); 
+    	Queue &operator=(const Queue &);
+
     };
 };
 #endif

@@ -25,6 +25,10 @@
 #include <utils/Mutex.h>
 #include <utils/Timers.h>
 
+#if defined(HAVE_PTHREADS)
+# include <pthread.h>
+#endif
+
 // ---------------------------------------------------------------------------
 namespace Athena {
 // ---------------------------------------------------------------------------
@@ -71,7 +75,12 @@ public:
 
 private:
 
-    void* mCond;
+private:
+#if defined(HAVE_PTHREADS)
+        pthread_cond_t mCond;
+#else
+        void*   mState;
+#endif
 
 };
 

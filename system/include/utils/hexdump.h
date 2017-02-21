@@ -19,6 +19,7 @@
 #define HEXDUMP_H_
 
 #include <sys/types.h>
+#include <stdlib.h>
 
 namespace Athena {
 

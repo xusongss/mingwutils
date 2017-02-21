@@ -25,7 +25,7 @@ static status_t config_default(config_ctx_t *ctx){
                 break;
             case OPT_TYPE_STRING:
             {
-                *(char **)dst = _strdup(ins->default_val.str);
+                *(char **)dst = strdup(ins->default_val.str);
             }
                 break;
             default:
@@ -50,7 +50,7 @@ static status_t config_set(config_ctx_t *ctx,const char * key, const char * val,
                 case OPT_TYPE_INT:
                 {
                     int num;
-                    if (sscanf_s(val, "%d", &num) == 1){
+                    if (sscanf(val, "%d", &num) == 1){
                         if((ins->min <=num) && (num <= ins->max) ){
                             *(int *)dst = num;
                         }else{
@@ -63,7 +63,7 @@ static status_t config_set(config_ctx_t *ctx,const char * key, const char * val,
                 case OPT_TYPE_INT64:
                 {
                     int64_t num;
-                    if (sscanf_s(val, "%d", &num) == 1){
+                    if (sscanf(val, "%d", &num) == 1){
                         if((ins->min <=num) && (num <= ins->max) ) {
                             *(int64_t *) dst = num;
                         }else{
@@ -74,7 +74,7 @@ static status_t config_set(config_ctx_t *ctx,const char * key, const char * val,
                     break;
                 case OPT_TYPE_STRING:
                 {
-                    *(char **)dst = _strdup(val);
+                    *(char **)dst = strdup(val);
                 }
                     break;
                 default:

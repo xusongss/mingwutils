@@ -23,6 +23,10 @@
 
 #include <utils/Errors.h>
 
+#if defined(HAVE_PTHREADS)
+# include <pthread.h>
+#endif
+
 // ---------------------------------------------------------------------------
 namespace Athena {
 // ---------------------------------------------------------------------------
@@ -72,7 +76,12 @@ private:
                 Mutex(const Mutex&);
     Mutex&      operator = (const Mutex&);
 
-    void* mMutex;
+#if defined(HAVE_PTHREADS)
+        pthread_mutex_t mMutex;
+#else
+        void    _init();
+    void*   mState;
+#endif
 };
 
 // ---------------------------------------------------------------------------

@@ -65,7 +65,7 @@ namespace Athena {
         int mMemPoolLen;
         char * mBasebuf;
         std::list< char* > mMemPool;
-        std::map<int, sp<DecoderThread>>mThs;
+        std::map<int, sp<DecoderThread> >mThs;
 
         Mutex mMutex;
         Type_e mType;
