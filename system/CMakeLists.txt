@@ -30,9 +30,6 @@ set(SOURCE_FILES
         libutils/TextOutput.cpp
         libutils/RefBase.cpp
         libutils/Threads.cpp
-        libutils/Mutex.cpp
-        libutils/Condition.cpp
-        libutils/RWLock.cpp
         libutils/VectorImpl.cpp
         libutils/SharedBuffer.cpp
         libutils/Queue.cpp

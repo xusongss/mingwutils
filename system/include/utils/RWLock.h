@@ -29,7 +29,7 @@
 // ---------------------------------------------------------------------------
 namespace Athena {
 // ---------------------------------------------------------------------------
-
+#if defined(HAVE_PTHREADS)
 
 /*
  * Simple mutex class.  The implementation is system-dependent.
@@ -78,6 +78,43 @@ private:
 
     pthread_rwlock_t mRWLock;
 };
+    inline RWLock::RWLock() {
+        pthread_rwlock_init(&mRWLock, NULL);
+    }
+    inline RWLock::RWLock(__attribute__((unused)) const char* name) {
+        pthread_rwlock_init(&mRWLock, NULL);
+    }
+    inline RWLock::RWLock(int type, __attribute__((unused)) const char* name) {
+        if (type == SHARED) {
+            pthread_rwlockattr_t attr;
+            pthread_rwlockattr_init(&attr);
+            pthread_rwlockattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
+            pthread_rwlock_init(&mRWLock, &attr);
+            pthread_rwlockattr_destroy(&attr);
+        } else {
+            pthread_rwlock_init(&mRWLock, NULL);
+        }
+    }
+    inline RWLock::~RWLock() {
+        pthread_rwlock_destroy(&mRWLock);
+    }
+    inline status_t RWLock::readLock() {
+        return -pthread_rwlock_rdlock(&mRWLock);
+    }
+    inline status_t RWLock::tryReadLock() {
+        return -pthread_rwlock_tryrdlock(&mRWLock);
+    }
+    inline status_t RWLock::writeLock() {
+        return -pthread_rwlock_wrlock(&mRWLock);
+    }
+    inline status_t RWLock::tryWriteLock() {
+        return -pthread_rwlock_trywrlock(&mRWLock);
+    }
+    inline void RWLock::unlock() {
+        pthread_rwlock_unlock(&mRWLock);
+    }
+
+#endif // HAVE_PTHREADS
 // ---------------------------------------------------------------------------
 }; // namespace android
 // ---------------------------------------------------------------------------
