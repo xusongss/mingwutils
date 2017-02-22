@@ -1,3 +1,5 @@
+#define LOG_TAG "Context"
+#define NDEBUG
 #include<stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -9,6 +11,7 @@ static status_t config_default(config_ctx_t *ctx){
     if(ctx == NULL || ctx->ops == NULL){
         return INVALID_OPERATION;
     }
+    ALOGV("%s", "set default values:");
     const Option_t *ins = ctx->ops;
     while(ins->name != NULL){
         void *dst = ((uint8_t *)ctx) + ins->offset;
@@ -16,20 +19,28 @@ static status_t config_default(config_ctx_t *ctx){
             case OPT_TYPE_INT:
             {
                     *(int *)dst = ins->default_val.i64;
+                    ALOGV(" name (%s) default (%d)", ins->name, *(int *)dst);
             }
                 break;
             case OPT_TYPE_INT64:
             {
                     *(int64_t *)dst = ins->default_val.i64;
+                    ALOGV(" name (%s) default (%ld)", ins->name, *(int64_t *)dst);
             }
                 break;
             case OPT_TYPE_STRING:
             {
-                *(char **)dst = strdup(ins->default_val.str);
+                if(ins->default_val.str == NULL){
+                    *(char **)dst=NULL;
+                    ALOGV(" name (%s) default (null)", ins->name);
+                }else{
+                    *(char **)dst = strdup(ins->default_val.str);
+                    ALOGV(" name (%s) default (%s)", ins->name,*(char **)dst);
+                }
             }
                 break;
             default:
-                ALOGE("not support type");
+                ALOGE(" name (%s) not support type", ins->name);
                 break;
         }
         ins++;
@@ -42,6 +53,7 @@ static status_t config_set(config_ctx_t *ctx,const char * key, const char * val,
         return -1;
     }
     int find = 0;
+    int notify = 0;
     while (ins->name != NULL){
         void *dst = ((uint8_t *)ctx) + ins->offset;
         if (!strcmp(ins->name, key)){
@@ -50,10 +62,14 @@ static status_t config_set(config_ctx_t *ctx,const char * key, const char * val,
                 case OPT_TYPE_INT:
                 {
                     int num;
+                    int old = *(int *)dst;
                     if (sscanf(val, "%d", &num) == 1){
                         if((ins->min <=num) && (num <= ins->max) ){
                             *(int *)dst = num;
+                            notify = old == num ? 0 : 1;
+                            ALOGV("name (%s) val (%d)", ins->name, *(int *)dst);
                         }else{
+                            ALOGE("name (%s) val (%d) bad value", ins->name, num );
                             return BAD_VALUE;
                         }
 
@@ -63,10 +79,14 @@ static status_t config_set(config_ctx_t *ctx,const char * key, const char * val,
                 case OPT_TYPE_INT64:
                 {
                     int64_t num;
+                    int64_t old = *(int64_t *) dst;
                     if (sscanf(val, "%d", &num) == 1){
                         if((ins->min <=num) && (num <= ins->max) ) {
                             *(int64_t *) dst = num;
+                            notify = old == num ? 0 : 1;
+                            ALOGV("name (%s) val (%ld)", ins->name, *(int64_t *)dst);
                         }else{
+                            ALOGE("name (%s) val (%dl) bad value", ins->name, num );
                             return BAD_VALUE;
                         }
                     }
@@ -74,15 +94,21 @@ static status_t config_set(config_ctx_t *ctx,const char * key, const char * val,
                     break;
                 case OPT_TYPE_STRING:
                 {
+                    char * old = *(char **)dst;
                     *(char **)dst = strdup(val);
+                    ALOGV("name (%s) val (%s)", ins->name,*(char **)dst);
+                    if(old != NULL){
+                        notify = !strcmp(old, val) ? 0 : 1;
+                        free(old);
+                    }
                 }
                     break;
                 default:
-                    ALOGE("not support type");
+                    ALOGE("name (%s) not support type", ins->name);
                     return NO_SUPPORTED;
             }
         }
-        if(find){
+        if(find && notify){
             ins->notify(ctx, key, val);
             break;
         }
