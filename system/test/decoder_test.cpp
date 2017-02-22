@@ -18,6 +18,6 @@ int main(){
        // usleep(1000);
     }
     IDecoder::destroyDecoder(decoder);
-    sleep(100000);
+    //sleep(100000);
 
 }

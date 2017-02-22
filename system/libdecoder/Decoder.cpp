@@ -149,6 +149,10 @@ namespace Athena{
             pth->requestExit();
         }
         mMsgQue->notifyAll();
+		 for (; it != mThs.end(); ++it){
+            sp<DecoderThread> pth = it->second;
+            pth->requestExitAndWait();
+        }
         mThs.clear();
 
         std::list<char*>::iterator lit = mMemPool.begin();
